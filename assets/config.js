@@ -4,8 +4,8 @@ window.HELPDESK_CONFIG = {
   siteName: "Support Center",
   companyName: "Your Company",
 
-  supabaseUrl: "https://YOUR-PROJECT-ID.supabase.co",
-  supabaseAnonKey: "YOUR-SUPABASE-ANON-KEY",
+  supabaseUrl: "https://cwyxfkzjrysmzboxwqtp.supabase.co",
+  supabaseAnonKey: "sb_publishable_xuGoABoowtLiRcKXHXBUMA_3rF6L6X1",
 
   contact: {
     email: "support@example.com",

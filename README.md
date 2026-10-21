@@ -15,7 +15,8 @@ and **Supabase** (the ticket database and staff sign-in).
 
 1. Sign up at <https://supabase.com> and create a new project. Save the database password somewhere safe.
 2. In the project, open **SQL Editor > New query**, paste all of `supabase/schema.sql`, and click **Run**.
-3. Open **Project Settings > API** and copy the **Project URL** and the **anon public** key.
+3. Open **Project Settings > API Keys** and copy the **Publishable key** (`sb_publishable_...`).
+   Your Project URL is `https://YOUR-PROJECT-ID.supabase.co`. Never put a secret key in the site.
 4. Open **Authentication > Sign In / Providers** and turn **off** "Allow new users to sign up".
    Staff accounts are created by you, so nobody else can register.
 
@@ -34,7 +35,7 @@ and **Supabase** (the ticket database and staff sign-in).
 
 Edit `assets/config.js`:
 
-- `supabaseUrl` and `supabaseAnonKey` from step 1 (the anon key is designed to be public).
+- `supabaseUrl` and `supabaseAnonKey` (the publishable key) from step 1. It is designed to be public.
 - `siteName`, `companyName`, `contact`, `hours` (pick your timezone) and `categories`.
 
 Edit `assets/faq.js` to write your own help articles.
