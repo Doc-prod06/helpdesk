@@ -88,3 +88,9 @@ Then open <http://localhost:8765>.
 - Email notifications (to staff on new tickets, to customers on replies) with a Supabase Edge Function and a mail service such as Resend.
 - Cloudflare Turnstile on the ticket form if spam becomes a problem.
 - File attachments with Supabase Storage.
+
+## Updating the site
+
+Edit files, commit and push; GitHub republishes in about a minute. Browsers cache files for up to
+10 minutes, so after changing anything in `assets/`, bump the `?v=` number on the asset links in
+the `.html` pages (e.g. `?v=2` to `?v=3`) so visitors get the new version right away.

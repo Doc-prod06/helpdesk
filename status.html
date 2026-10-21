@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ticket status</title>
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css?v=2">
 </head>
 <body>
   <header id="site-header" class="site-header"></header>
@@ -38,9 +38,9 @@
   <footer id="site-footer" class="site-footer"></footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-  <script src="assets/config.js"></script>
-  <script src="assets/faq.js"></script>
-  <script src="assets/app.js"></script>
+  <script src="assets/config.js?v=2"></script>
+  <script src="assets/faq.js?v=2"></script>
+  <script src="assets/app.js?v=2"></script>
   <script>
     renderChrome("status");
     if (!isConfigured()) document.getElementById("config-warning").innerHTML = notConfiguredHtml();
