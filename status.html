@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ticket status</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+
+  <main class="section">
+    <div class="container narrow">
+      <div id="lookup-view">
+        <h1>Check ticket status</h1>
+        <p class="muted">Enter your ticket number and the email address you used when you submitted it.</p>
+        <div id="config-warning"></div>
+        <form id="lookup-form" class="card">
+          <div id="lookup-error"></div>
+          <div class="row">
+            <div class="field">
+              <label for="ref">Ticket number</label>
+              <input id="ref" name="ref" type="text" placeholder="HD-XXXXXXXX" autocomplete="off" required>
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" autocomplete="email" required>
+            </div>
+          </div>
+          <button id="lookup-btn" class="btn btn-primary" type="submit">Find my ticket</button>
+        </form>
+      </div>
+
+      <div id="ticket-view" class="hidden"></div>
+    </div>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="assets/config.js"></script>
+  <script src="assets/faq.js"></script>
+  <script src="assets/app.js"></script>
+  <script>
+    renderChrome("status");
+    if (!isConfigured()) document.getElementById("config-warning").innerHTML = notConfiguredHtml();
+
+    const lookupForm = document.getElementById("lookup-form");
+    const ticketView = document.getElementById("ticket-view");
+    const refParam = new URLSearchParams(location.search).get("ref");
+    if (refParam) {
+      lookupForm.ref.value = refParam;
+      lookupForm.email.focus();
+    }
+
+    // Kept in memory only, so the email is never stored in the browser or the URL.
+    let current = null;
+
+    function setLookupError(msg) {
+      document.getElementById("lookup-error").innerHTML = msg ? `<div class="notice notice-error">${esc(msg)}</div>` : "";
+    }
+
+    async function loadTicket(ref, email) {
+      const { data, error } = await getDb().rpc("get_ticket", { p_ref: ref, p_email: email });
+      if (error) throw error;
+      return data;
+    }
+
+    function renderTicket(t) {
+      const thread = [
+        { author_type: "customer", author_name: t.name, body: t.description, created_at: t.created_at },
+        ...t.messages,
+      ];
+      const canReply = t.status !== "closed";
+      ticketView.innerHTML = `
+        <p><a href="status.html">← Look up a different ticket</a></p>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center">
+            <span class="ticket-ref" style="font-size:1.1rem">${esc(t.ref)}</span>
+            ${statusBadge(t.status)}
+          </div>
+          <h1 style="margin-top:8px">${esc(t.subject)}</h1>
+          <div class="meta">
+            <span>${esc(categoryName(t.category))}</span>
+            <span>Priority: ${esc(PRIORITY_LABELS[t.priority] || t.priority)}</span>
+            ${t.reference_number ? `<span>Ref: ${esc(t.reference_number)}</span>` : ""}
+            <span>Opened ${esc(fmtDate(t.created_at))}</span>
+            <span>Updated ${esc(fmtDate(t.updated_at))}</span>
+          </div>
+          ${t.status === "waiting_on_customer" ? `<div class="notice notice-warn">We need more information from you. Please reply below.</div>` : ""}
+          <div class="thread">${thread.map((m) => `
+            <div class="msg ${m.author_type === "staff" ? "msg-staff" : ""}">
+              <div class="msg-head"><strong>${m.author_type === "staff" ? esc(m.author_name || "Support team") : "You"}</strong>
+                <span>${esc(fmtDate(m.created_at))}</span></div>
+              <div class="msg-body">${esc(m.body)}</div>
+            </div>`).join("")}
+          </div>
+          ${canReply ? `
+            <form id="reply-form">
+              <div id="reply-error"></div>
+              <div class="field">
+                <label for="reply">Add a reply</label>
+                <textarea id="reply" maxlength="10000" required></textarea>
+              </div>
+              <button id="reply-btn" class="btn btn-primary" type="submit">Send reply</button>
+            </form>`
+          : `<div class="notice notice-ok">This ticket is closed. Need more help? <a href="submit.html">Open a new ticket</a>.</div>`}
+        </div>`;
+
+      const replyForm = document.getElementById("reply-form");
+      if (replyForm) replyForm.addEventListener("submit", sendReply);
+    }
+
+    async function sendReply(e) {
+      e.preventDefault();
+      const body = document.getElementById("reply").value.trim();
+      const errBox = document.getElementById("reply-error");
+      errBox.innerHTML = "";
+      if (!body) return;
+      const btn = document.getElementById("reply-btn");
+      btn.disabled = true;
+      btn.textContent = "Sending…";
+      try {
+        const { error } = await getDb().rpc("add_customer_reply", { p_ref: current.ref, p_email: current.email, p_body: body });
+        if (error) throw error;
+        renderTicket(await loadTicket(current.ref, current.email));
+      } catch (err) {
+        errBox.innerHTML = `<div class="notice notice-error">${esc(errorMessage(err))}</div>`;
+        btn.disabled = false;
+        btn.textContent = "Send reply";
+      }
+    }
+
+    lookupForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setLookupError("");
+      const ref = lookupForm.ref.value.trim();
+      const email = lookupForm.email.value.trim();
+      if (!ref || !email) return setLookupError("Enter both your ticket number and email.");
+      if (!isConfigured()) return setLookupError("Ticketing isn't connected yet.");
+
+      const btn = document.getElementById("lookup-btn");
+      btn.disabled = true;
+      btn.textContent = "Looking up…";
+      try {
+        const ticket = await loadTicket(ref, email);
+        if (!ticket) return setLookupError("We couldn't find a ticket with that number and email. Check both and try again.");
+        current = { ref: ticket.ref, email };
+        renderTicket(ticket);
+        document.getElementById("lookup-view").classList.add("hidden");
+        ticketView.classList.remove("hidden");
+      } catch (err) {
+        setLookupError(errorMessage(err));
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Find my ticket";
+      }
+    });
+  </script>
+</body>
+</html>

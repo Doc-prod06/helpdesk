@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Submit a ticket</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+
+  <main class="section">
+    <div class="container narrow">
+      <div id="form-view">
+        <h1>Submit a ticket</h1>
+        <p class="muted">Tell us what's going on and we'll get back to you by email. <span id="response-time"></span></p>
+        <div id="config-warning"></div>
+
+        <form id="ticket-form" class="card" novalidate>
+          <div id="form-error"></div>
+
+          <div class="field">
+            <label>What do you need help with?</label>
+            <div id="cat-picker" class="cat-picker"></div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="name">Your name</label>
+              <input id="name" name="name" type="text" maxlength="120" autocomplete="name" required>
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" maxlength="254" autocomplete="email" required>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="phone">Phone <span class="hint">(optional)</span></label>
+              <input id="phone" name="phone" type="tel" maxlength="40" autocomplete="tel">
+            </div>
+            <div class="field">
+              <label for="priority">How urgent is this?</label>
+              <select id="priority" name="priority">
+                <option value="low">Low – whenever you get to it</option>
+                <option value="normal" selected>Normal</option>
+                <option value="high">High – it's blocking my work</option>
+                <option value="urgent">Urgent – something is down</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field hidden" id="extra-field-wrap">
+            <label for="reference_number"><span id="extra-label"></span> <span class="hint">(optional)</span></label>
+            <input id="reference_number" name="reference_number" type="text" maxlength="100">
+          </div>
+
+          <div class="field">
+            <label for="subject">Subject</label>
+            <input id="subject" name="subject" type="text" maxlength="200" required>
+          </div>
+          <div id="suggestions"></div>
+
+          <div class="field">
+            <label for="description">Details <span class="hint">– what happened, what you expected, any error messages</span></label>
+            <textarea id="description" name="description" maxlength="10000" required></textarea>
+          </div>
+
+          <!-- Honeypot: hidden from people, bots tend to fill it in. -->
+          <div class="hp-field" aria-hidden="true">
+            <label for="website">Website</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+          </div>
+
+          <button id="submit-btn" class="btn btn-primary" type="submit">Submit ticket</button>
+        </form>
+      </div>
+
+      <div id="done-view" class="hidden">
+        <div class="card" style="text-align:center">
+          <p style="font-size:2.5rem;margin:0">✅</p>
+          <h1>Ticket received</h1>
+          <p class="muted">Your ticket number is</p>
+          <p id="done-ref" class="ticket-ref"></p>
+          <p class="muted">Save this number. You'll need it and your email address to check the status or reply.</p>
+          <a id="done-link" class="btn btn-primary" href="status.html">View ticket</a>
+          <a class="btn btn-secondary" href="index.html">Back to help center</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="assets/config.js"></script>
+  <script src="assets/faq.js"></script>
+  <script src="assets/app.js"></script>
+  <script>
+    renderChrome("submit");
+    document.getElementById("response-time").textContent = CFG.contact.responseTime;
+    if (!isConfigured()) document.getElementById("config-warning").innerHTML = notConfiguredHtml();
+
+    const form = document.getElementById("ticket-form");
+    const preselect = new URLSearchParams(location.search).get("category");
+
+    document.getElementById("cat-picker").innerHTML = CFG.categories
+      .map((c) => `<label><input type="radio" name="category" value="${esc(c.id)}"${c.id === preselect ? " checked" : ""}>
+        <span aria-hidden="true">${c.icon}</span> ${esc(c.name)}</label>`)
+      .join("");
+
+    function updateExtraField() {
+      const selected = form.querySelector('input[name="category"]:checked');
+      const cat = selected && CFG.categories.find((c) => c.id === selected.value);
+      const wrap = document.getElementById("extra-field-wrap");
+      if (cat && cat.extraField) {
+        document.getElementById("extra-label").textContent = cat.extraField.label;
+        document.getElementById("reference_number").placeholder = cat.extraField.placeholder || "";
+        wrap.classList.remove("hidden");
+      } else {
+        wrap.classList.add("hidden");
+        document.getElementById("reference_number").value = "";
+      }
+    }
+    document.getElementById("cat-picker").addEventListener("change", updateExtraField);
+    updateExtraField();
+
+    // Suggest help articles while the customer types the subject.
+    let suggestTimer;
+    document.getElementById("subject").addEventListener("input", (e) => {
+      clearTimeout(suggestTimer);
+      suggestTimer = setTimeout(() => {
+        const hits = searchFaq(e.target.value, 3);
+        document.getElementById("suggestions").innerHTML = hits.length
+          ? `<div class="suggestions"><p class="small" style="margin:0 0 8px"><strong>These articles might help:</strong></p>${hits.map(faqItemHtml).join("")}</div>`
+          : "";
+      }, 250);
+    });
+
+    function showError(msg) {
+      document.getElementById("form-error").innerHTML = msg ? `<div class="notice notice-error">${esc(msg)}</div>` : "";
+      if (msg) form.scrollIntoView({ behavior: "smooth" });
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      showError("");
+      const data = Object.fromEntries(new FormData(form));
+      if (data.website) return; // bot
+
+      if (!data.category) return showError("Please choose what you need help with.");
+      if (!data.name.trim()) return showError("Please enter your name.");
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(data.email.trim())) return showError("Please enter a valid email address.");
+      if (!data.subject.trim()) return showError("Please enter a subject.");
+      if (!data.description.trim()) return showError("Please describe the problem.");
+      if (!isConfigured()) return showError(`Ticketing isn't connected yet. Please email ${CFG.contact.email}.`);
+
+      const btn = document.getElementById("submit-btn");
+      btn.disabled = true;
+      btn.textContent = "Submitting…";
+      try {
+        const { data: ref, error } = await getDb().rpc("submit_ticket", {
+          p_name: data.name,
+          p_email: data.email,
+          p_phone: data.phone,
+          p_category: data.category,
+          p_priority: data.priority,
+          p_subject: data.subject,
+          p_description: data.description,
+          p_reference_number: data.reference_number || null,
+        });
+        if (error) throw error;
+        document.getElementById("done-ref").textContent = ref;
+        document.getElementById("done-link").href = `status.html?ref=${encodeURIComponent(ref)}`;
+        document.getElementById("form-view").classList.add("hidden");
+        document.getElementById("done-view").classList.remove("hidden");
+        window.scrollTo(0, 0);
+      } catch (err) {
+        showError(errorMessage(err));
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Submit ticket";
+      }
+    });
+  </script>
+</body>
+</html>
