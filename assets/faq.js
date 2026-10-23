@@ -2,19 +2,19 @@
 // `answer` is HTML, so you can use links, lists and bold text.
 window.HELPDESK_FAQ = [
   {
-    category: "password",
+    category: "account",
     question: "How do I reset my password?",
     answer: `<ol>
       <li>Go to the sign-in page and choose <strong>Forgot password</strong>.</li>
       <li>Enter the email address on your account.</li>
       <li>Open the email we send you and follow the link within 30 minutes.</li>
     </ol>
-    <p>No email, or locked out? <a href="submit.html?category=password">Request a password reset</a>.</p>`,
+    <p>No email, or locked out? <a href="submit.html?category=account">Open an Account &amp; Login ticket</a>.</p>`,
   },
   {
-    category: "password",
+    category: "account",
     question: "My account is locked. What should I do?",
-    answer: `<p>Accounts lock after several wrong passwords. Wait 15 minutes and try again, or <a href="submit.html?category=password">request a reset</a> and tell us which account is locked.</p>`,
+    answer: `<p>Accounts lock after several wrong passwords. Wait 15 minutes and try again, or <a href="submit.html?category=account">request a reset</a> and tell us which account is locked.</p>`,
   },
   {
     category: "account",

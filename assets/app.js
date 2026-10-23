@@ -65,7 +65,10 @@ function renderChrome(active) {
   const header = document.getElementById("site-header");
   if (header) {
     header.innerHTML = `<div class="container header-inner">
-      <a class="brand" href="index.html"><span class="brand-mark">?</span>${esc(CFG.siteName)}</a>
+      <a class="brand" href="index.html">
+        <span class="brand-logo"><img src="assets/logo.png" alt="${esc(CFG.companyName)}" width="107" height="43"></span>
+        <span class="brand-name">${esc(CFG.siteName)}</span>
+      </a>
       <button class="nav-toggle" aria-label="Menu" aria-expanded="false">☰</button>
       <nav class="nav">${links
         .map(([id, href, label]) => `<a href="${href}"${id === active ? ' aria-current="page"' : ""}>${label}</a>`)
