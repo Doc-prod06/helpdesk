@@ -29,13 +29,31 @@ window.HELPDESK_CONFIG = {
   },
 
   // Request categories shown on the home page and the ticket form.
-  // extraField adds an optional field to the form for that category.
+  // extraField adds an optional field to the standard form for that category.
+  // form replaces the standard form with just a name plus the listed fields (no email needed).
+  //   Field types: text, textarea, checkboxes. reference: true stores that field as the ticket's reference number.
   categories: [
     { id: "account", name: "Account & Login", icon: "🔐", description: "Sign-in problems, password resets, account changes.",
       extraField: { label: "Which account or system?", placeholder: "e.g. email, computer login, VPN" } },
     { id: "technical", name: "Technical Issue", icon: "🛠️", description: "Something isn't working the way it should." },
-    { id: "toner", name: "Order Printer Ink/Toner", icon: "🖨️", description: "Request ink or toner cartridges for a printer.",
-      extraField: { label: "Printer model and location", placeholder: "e.g. HP LaserJet M404, front office" } },
+    { id: "toner", name: "Order Printer Ink/Toner", icon: "🖨️", description: "Request ink, toner or printer supplies.",
+      form: {
+        subject: "Toner order",
+        fields: [
+          { id: "tag", label: "Vereco Tag Number", type: "text", required: true, reference: true },
+          { id: "supplies", label: "What do you need?", type: "checkboxes", required: true,
+            options: ["Black", "Cyan", "Magenta", "Yellow", "Maintenance Kit", "Waste Toner Container"] },
+        ],
+      } },
+    { id: "repair", name: "Request Printer Repair", icon: "🔧", description: "Report a printer that's jammed, broken or printing badly.",
+      form: {
+        subject: "Printer repair",
+        fields: [
+          { id: "tag", label: "Vereco Tag Number", type: "text", required: true, reference: true },
+          { id: "details", label: "What's happening with the printer?", type: "textarea", required: true,
+            placeholder: "e.g. paper jams on every page, streaks, error code on the screen" },
+        ],
+      } },
     { id: "laptop", name: "New Laptop Setup", icon: "💻", description: "Set up a laptop for a new or existing team member.",
       extraField: { label: "Who is it for, and when is it needed?", placeholder: "e.g. Jordan Lee, needed by Nov 3" } },
   ],

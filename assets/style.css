@@ -244,3 +244,5 @@ textarea { min-height: 140px; resize: vertical; }
 #categories { grid-template-columns: repeat(4, 1fr); }
 @media (max-width: 900px) { #categories { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 520px) { #categories { grid-template-columns: 1fr; } }
+@media (min-width: 1000px) { #categories { grid-template-columns: repeat(5, 1fr); } }
+@media (min-width: 521px) and (max-width: 999px) { #categories { grid-template-columns: repeat(3, 1fr); } }

@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ticket status</title>
-  <link rel="icon" href="assets/favicon.svg?v=4" type="image/svg+xml">
+  <link rel="icon" href="assets/favicon.svg?v=5" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/style.css?v=4">
+  <link rel="stylesheet" href="assets/style.css?v=5">
 </head>
 <body>
   <header id="site-header" class="site-header"></header>
@@ -17,7 +17,7 @@
     <div class="container narrow">
       <div id="lookup-view">
         <h1>Check ticket status</h1>
-        <p class="muted">Enter your ticket number and the email address you used when you submitted it.</p>
+        <p class="muted">Enter your ticket number, plus the email address you used if you gave one.</p>
         <div id="config-warning"></div>
         <form id="lookup-form" class="card">
           <div id="lookup-error"></div>
@@ -27,8 +27,8 @@
               <input id="ref" name="ref" type="text" placeholder="HD-XXXXXXXX" autocomplete="off" required>
             </div>
             <div class="field">
-              <label for="email">Email</label>
-              <input id="email" name="email" type="email" autocomplete="email" required>
+              <label for="email">Email <span class="hint">(if you gave one)</span></label>
+              <input id="email" name="email" type="email" autocomplete="email">
             </div>
           </div>
           <button id="lookup-btn" class="btn btn-primary" type="submit">Find my ticket</button>
@@ -42,9 +42,9 @@
   <footer id="site-footer" class="site-footer"></footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-  <script src="assets/config.js?v=4"></script>
-  <script src="assets/faq.js?v=4"></script>
-  <script src="assets/app.js?v=4"></script>
+  <script src="assets/config.js?v=5"></script>
+  <script src="assets/faq.js?v=5"></script>
+  <script src="assets/app.js?v=5"></script>
   <script>
     renderChrome("status");
     if (!isConfigured()) document.getElementById("config-warning").innerHTML = notConfiguredHtml();
@@ -140,7 +140,7 @@
       setLookupError("");
       const ref = lookupForm.ref.value.trim();
       const email = lookupForm.email.value.trim();
-      if (!ref || !email) return setLookupError("Enter both your ticket number and email.");
+      if (!ref) return setLookupError("Enter your ticket number.");
       if (!isConfigured()) return setLookupError("Ticketing isn't connected yet.");
 
       const btn = document.getElementById("lookup-btn");
@@ -148,7 +148,7 @@
       btn.textContent = "Looking up…";
       try {
         const ticket = await loadTicket(ref, email);
-        if (!ticket) return setLookupError("We couldn't find a ticket with that number and email. Check both and try again.");
+        if (!ticket) return setLookupError("We couldn't find that ticket. Check the number, and the email if you gave one when submitting.");
         current = { ref: ticket.ref, email };
         renderTicket(ticket);
         document.getElementById("lookup-view").classList.add("hidden");

@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Submit a ticket</title>
-  <link rel="icon" href="assets/favicon.svg?v=4" type="image/svg+xml">
+  <link rel="icon" href="assets/favicon.svg?v=5" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/style.css?v=4">
+  <link rel="stylesheet" href="assets/style.css?v=5">
 </head>
 <body>
   <header id="site-header" class="site-header"></header>
@@ -17,7 +17,7 @@
     <div class="container narrow">
       <div id="form-view">
         <h1>Submit a ticket</h1>
-        <p class="muted">Tell us what's going on and we'll get back to you by email. <span id="response-time"></span></p>
+        <p class="muted">Tell us what you need and we'll take care of it. <span id="response-time"></span></p>
         <div id="config-warning"></div>
 
         <form id="ticket-form" class="card" novalidate>
@@ -28,22 +28,24 @@
             <div id="cat-picker" class="cat-picker"></div>
           </div>
 
-          <div class="row">
-            <div class="field">
-              <label for="name">Your name</label>
-              <input id="name" name="name" type="text" maxlength="120" autocomplete="name" required>
-            </div>
-            <div class="field">
-              <label for="email">Email</label>
-              <input id="email" name="email" type="email" maxlength="254" autocomplete="email" required>
-            </div>
+          <div class="field">
+            <label for="name">Your name</label>
+            <input id="name" name="name" type="text" maxlength="120" autocomplete="name" required>
           </div>
 
-          <div class="row">
-            <div class="field">
-              <label for="phone">Phone <span class="hint">(optional)</span></label>
-              <input id="phone" name="phone" type="tel" maxlength="40" autocomplete="tel">
+          <!-- Shown for categories without a custom form. -->
+          <div id="standard-fields">
+            <div class="row">
+              <div class="field">
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" maxlength="254" autocomplete="email" required>
+              </div>
+              <div class="field">
+                <label for="phone">Phone <span class="hint">(optional)</span></label>
+                <input id="phone" name="phone" type="tel" maxlength="40" autocomplete="tel">
+              </div>
             </div>
+
             <div class="field">
               <label for="priority">How urgent is this?</label>
               <select id="priority" name="priority">
@@ -53,23 +55,26 @@
                 <option value="urgent">Urgent – something is down</option>
               </select>
             </div>
+
+            <div class="field hidden" id="extra-field-wrap">
+              <label for="reference_number"><span id="extra-label"></span> <span class="hint">(optional)</span></label>
+              <input id="reference_number" name="reference_number" type="text" maxlength="100">
+            </div>
+
+            <div class="field">
+              <label for="subject">Subject</label>
+              <input id="subject" name="subject" type="text" maxlength="200" required>
+            </div>
+            <div id="suggestions"></div>
+
+            <div class="field">
+              <label for="description">Details <span class="hint">– what happened, what you expected, any error messages</span></label>
+              <textarea id="description" name="description" maxlength="10000" required></textarea>
+            </div>
           </div>
 
-          <div class="field hidden" id="extra-field-wrap">
-            <label for="reference_number"><span id="extra-label"></span> <span class="hint">(optional)</span></label>
-            <input id="reference_number" name="reference_number" type="text" maxlength="100">
-          </div>
-
-          <div class="field">
-            <label for="subject">Subject</label>
-            <input id="subject" name="subject" type="text" maxlength="200" required>
-          </div>
-          <div id="suggestions"></div>
-
-          <div class="field">
-            <label for="description">Details <span class="hint">– what happened, what you expected, any error messages</span></label>
-            <textarea id="description" name="description" maxlength="10000" required></textarea>
-          </div>
+          <!-- Filled from the category's `form` in config.js. -->
+          <div id="custom-fields" class="hidden"></div>
 
           <!-- Honeypot: hidden from people, bots tend to fill it in. -->
           <div class="hp-field" aria-hidden="true">
@@ -87,7 +92,7 @@
           <h1>Ticket received</h1>
           <p class="muted">Your ticket number is</p>
           <p id="done-ref" class="ticket-ref"></p>
-          <p class="muted">Save this number. You'll need it and your email address to check the status or reply.</p>
+          <p id="done-hint" class="muted"></p>
           <a id="done-link" class="btn btn-primary" href="status.html">View ticket</a>
           <a class="btn btn-secondary" href="index.html">Back to help center</a>
         </div>
@@ -98,9 +103,9 @@
   <footer id="site-footer" class="site-footer"></footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-  <script src="assets/config.js?v=4"></script>
-  <script src="assets/faq.js?v=4"></script>
-  <script src="assets/app.js?v=4"></script>
+  <script src="assets/config.js?v=5"></script>
+  <script src="assets/faq.js?v=5"></script>
+  <script src="assets/app.js?v=5"></script>
   <script>
     renderChrome("submit");
     document.getElementById("response-time").textContent = CFG.contact.responseTime;
@@ -114,9 +119,37 @@
         <span aria-hidden="true">${c.icon}</span> ${esc(c.name)}</label>`)
       .join("");
 
-    function updateExtraField() {
+    function currentCategory() {
       const selected = form.querySelector('input[name="category"]:checked');
-      const cat = selected && CFG.categories.find((c) => c.id === selected.value);
+      return selected && CFG.categories.find((c) => c.id === selected.value);
+    }
+
+    // Custom form fields are named "cf_<id>" so they never clash with the standard ones.
+    function customFieldHtml(f) {
+      const name = `cf_${esc(f.id)}`;
+      const label = `${esc(f.label)}${f.required ? "" : ' <span class="hint">(optional)</span>'}`;
+      if (f.type === "checkboxes") {
+        return `<div class="field"><label>${label}</label><div class="cat-picker">${f.options
+          .map((o) => `<label><input type="checkbox" name="${name}" value="${esc(o)}"> ${esc(o)}</label>`).join("")}</div></div>`;
+      }
+      const ph = f.placeholder ? ` placeholder="${esc(f.placeholder)}"` : "";
+      return `<div class="field"><label for="${name}">${label}</label>${f.type === "textarea"
+        ? `<textarea id="${name}" name="${name}" maxlength="5000"${ph}></textarea>`
+        : `<input id="${name}" name="${name}" type="text" maxlength="100" autocomplete="off"${ph}>`}</div>`;
+    }
+
+    function updateFormMode() {
+      const cat = currentCategory();
+      const custom = !!(cat && cat.form);
+      document.getElementById("standard-fields").classList.toggle("hidden", custom);
+      const box = document.getElementById("custom-fields");
+      box.classList.toggle("hidden", !custom);
+      box.innerHTML = custom ? cat.form.fields.map(customFieldHtml).join("") : "";
+      updateExtraField();
+    }
+
+    function updateExtraField() {
+      const cat = currentCategory();
       const wrap = document.getElementById("extra-field-wrap");
       if (cat && cat.extraField) {
         document.getElementById("extra-label").textContent = cat.extraField.label;
@@ -127,8 +160,8 @@
         document.getElementById("reference_number").value = "";
       }
     }
-    document.getElementById("cat-picker").addEventListener("change", updateExtraField);
-    updateExtraField();
+    document.getElementById("cat-picker").addEventListener("change", updateFormMode);
+    updateFormMode();
 
     // Suggest help articles while the customer types the subject.
     let suggestTimer;
@@ -147,17 +180,59 @@
       if (msg) form.scrollIntoView({ behavior: "smooth" });
     }
 
+    // Turns a custom form into the ticket's subject, description and reference number.
+    function customTicket(cat, fd) {
+      const parts = { ref: null, lines: [], picks: [] };
+      for (const f of cat.form.fields) {
+        const name = `cf_${f.id}`;
+        const label = f.label.replace(/[?:]\s*$/, "");
+        if (f.type === "checkboxes") {
+          const picked = fd.getAll(name);
+          if (f.required && !picked.length) return { error: `Please choose at least one option for "${f.label}".` };
+          if (picked.length) parts.lines.push(`${label}: ${picked.join(", ")}`);
+          parts.picks.push(...picked);
+        } else {
+          const value = (fd.get(name) || "").trim();
+          if (f.required && !value) return { error: `Please fill in "${f.label}".` };
+          if (!value) continue;
+          if (f.reference) parts.ref = value;
+          parts.lines.push(f.type === "textarea" ? `${label}:\n${value}` : `${label}: ${value}`);
+        }
+      }
+      let subject = [cat.form.subject, parts.ref].filter(Boolean).join(" – ");
+      if (parts.picks.length) subject += `: ${parts.picks.join(", ")}`;
+      return {
+        subject: subject.slice(0, 200),
+        description: parts.lines.join("\n\n"),
+        reference_number: parts.ref,
+      };
+    }
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       showError("");
-      const data = Object.fromEntries(new FormData(form));
+      const fd = new FormData(form);
+      const data = Object.fromEntries(fd);
       if (data.website) return; // bot
 
-      if (!data.category) return showError("Please choose what you need help with.");
+      const cat = currentCategory();
+      if (!cat) return showError("Please choose what you need help with.");
       if (!data.name.trim()) return showError("Please enter your name.");
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(data.email.trim())) return showError("Please enter a valid email address.");
-      if (!data.subject.trim()) return showError("Please enter a subject.");
-      if (!data.description.trim()) return showError("Please describe the problem.");
+
+      let ticket;
+      if (cat.form) {
+        ticket = customTicket(cat, fd);
+        if (ticket.error) return showError(ticket.error);
+        Object.assign(ticket, { email: null, phone: null, priority: "normal" });
+      } else {
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(data.email.trim())) return showError("Please enter a valid email address.");
+        if (!data.subject.trim()) return showError("Please enter a subject.");
+        if (!data.description.trim()) return showError("Please describe the problem.");
+        ticket = {
+          email: data.email, phone: data.phone, priority: data.priority,
+          subject: data.subject, description: data.description, reference_number: data.reference_number || null,
+        };
+      }
       if (!isConfigured()) return showError(`Ticketing isn't connected yet. Please email ${CFG.contact.email}.`);
 
       const btn = document.getElementById("submit-btn");
@@ -166,15 +241,18 @@
       try {
         const { data: ref, error } = await getDb().rpc("submit_ticket", {
           p_name: data.name,
-          p_email: data.email,
-          p_phone: data.phone,
-          p_category: data.category,
-          p_priority: data.priority,
-          p_subject: data.subject,
-          p_description: data.description,
-          p_reference_number: data.reference_number || null,
+          p_email: ticket.email,
+          p_phone: ticket.phone,
+          p_category: cat.id,
+          p_priority: ticket.priority,
+          p_subject: ticket.subject,
+          p_description: ticket.description,
+          p_reference_number: ticket.reference_number,
         });
         if (error) throw error;
+        document.getElementById("done-hint").textContent = ticket.email
+          ? "Save this number. You'll need it and your email address to check the status or reply."
+          : "Save this number. You'll need it to check the status or reply.";
         document.getElementById("done-ref").textContent = ref;
         document.getElementById("done-link").href = `status.html?ref=${encodeURIComponent(ref)}`;
         document.getElementById("form-view").classList.add("hidden");

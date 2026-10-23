@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
   <title>Staff</title>
-  <link rel="icon" href="assets/favicon.svg?v=4" type="image/svg+xml">
+  <link rel="icon" href="assets/favicon.svg?v=5" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/style.css?v=4">
+  <link rel="stylesheet" href="assets/style.css?v=5">
 </head>
 <body>
   <header id="site-header" class="site-header"></header>
@@ -79,9 +79,9 @@
   <footer id="site-footer" class="site-footer"></footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-  <script src="assets/config.js?v=4"></script>
-  <script src="assets/faq.js?v=4"></script>
-  <script src="assets/app.js?v=4"></script>
+  <script src="assets/config.js?v=5"></script>
+  <script src="assets/faq.js?v=5"></script>
+  <script src="assets/app.js?v=5"></script>
   <script>
     renderChrome("");
     STATUS_LABELS.waiting_on_customer = "Waiting on customer";  // staff wording
@@ -231,7 +231,7 @@
         <h2 style="margin-top:6px">${esc(t.subject)}</h2>
         <div class="meta">
           <span><strong>${esc(t.name)}</strong></span>
-          <a href="mailto:${esc(t.email)}?subject=${encodeURIComponent(`[${t.ref}] ${t.subject}`)}">${esc(t.email)}</a>
+          ${t.email ? `<a href="mailto:${esc(t.email)}?subject=${encodeURIComponent(`[${t.ref}] ${t.subject}`)}">${esc(t.email)}</a>` : `<span>No email given</span>`}
           ${t.phone ? `<a href="tel:${esc(t.phone)}">${esc(t.phone)}</a>` : ""}
           <span>${esc(categoryName(t.category))}</span>
           ${t.reference_number ? `<span>Ref: ${esc(t.reference_number)}</span>` : ""}

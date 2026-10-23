@@ -4,7 +4,8 @@
 -- Security model:
 --   * The public (anon key) can NOT read or write the tables directly.
 --   * Customers go through three functions: submit_ticket, get_ticket, add_customer_reply.
---     Looking up a ticket requires both its reference number and the submitter's email.
+--     Looking up a ticket requires its reference number plus the submitter's email,
+--     except for tickets filed without an email (e.g. toner orders), which need only the number.
 --   * Staff sign in with Supabase Auth; anyone listed in public.staff gets full access.
 
 -- ---------------------------------------------------------------------------
@@ -21,7 +22,7 @@ create table if not exists public.tickets (
   id               bigint generated always as identity primary key,
   ref              text not null unique,
   name             text not null check (char_length(name) between 1 and 120),
-  email            text not null check (char_length(email) between 3 and 254),
+  email            text check (char_length(email) between 3 and 254),  -- null for quick forms
   phone            text check (char_length(phone) <= 40),
   category         text not null check (char_length(category) <= 60),
   priority         text not null default 'normal'
@@ -35,6 +36,9 @@ create table if not exists public.tickets (
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
 );
+
+-- Projects created before email became optional.
+alter table public.tickets alter column email drop not null;
 
 create index if not exists tickets_status_idx on public.tickets (status);
 create index if not exists tickets_email_idx on public.tickets (lower(email));
@@ -107,16 +111,21 @@ create or replace function public.submit_ticket(
 language plpgsql security definer set search_path = public as $$
 declare
   v_ref   text;
-  v_email text := lower(trim(p_email));
+  v_email text := nullif(lower(trim(coalesce(p_email, ''))), '');
 begin
-  if v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then
+  if v_email is not null and v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then
     raise exception 'Please enter a valid email address.';
   end if;
 
-  -- Basic abuse protection: at most 5 tickets per email per hour.
-  if (select count(*) from public.tickets
+  -- Basic abuse protection: at most 5 tickets per email per hour,
+  -- and at most 60 tickets per hour across everyone who leaves email blank.
+  if v_email is not null and (select count(*) from public.tickets
       where lower(email) = v_email and created_at > now() - interval '1 hour') >= 5 then
     raise exception 'Too many tickets submitted recently. Please try again later.';
+  end if;
+  if v_email is null and (select count(*) from public.tickets
+      where email is null and created_at > now() - interval '1 hour') >= 60 then
+    raise exception 'Too many requests right now. Please try again later.';
   end if;
 
   loop
@@ -165,7 +174,8 @@ language sql stable security definer set search_path = public as $$
     ), '[]'::json)
   )
   from public.tickets t
-  where t.ref = upper(trim(p_ref)) and lower(t.email) = lower(trim(p_email));
+  where t.ref = upper(trim(p_ref))
+    and (t.email is null or lower(t.email) = lower(trim(coalesce(p_email, ''))));
 $$;
 
 create or replace function public.add_customer_reply(p_ref text, p_email text, p_body text)
@@ -175,7 +185,8 @@ declare
   t public.tickets;
 begin
   select * into t from public.tickets
-  where ref = upper(trim(p_ref)) and lower(email) = lower(trim(p_email));
+  where ref = upper(trim(p_ref))
+    and (email is null or lower(email) = lower(trim(coalesce(p_email, ''))));
 
   if t.id is null then
     raise exception 'Ticket not found.';
