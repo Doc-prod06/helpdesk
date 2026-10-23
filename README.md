@@ -1,5 +1,7 @@
 # Helpdesk
 
+Live site: <https://acshelpdesk.github.io> · Staff: <https://acshelpdesk.github.io/admin.html>
+
 A customer support site: help articles, contact info and hours, ticket submission by category,
 ticket status lookup with replies, and a staff queue. It runs for free on **GitHub Pages** (the website)
 and **Supabase** (the ticket database and staff sign-in).
