@@ -32,12 +32,12 @@ window.HELPDESK_CONFIG = {
   // extraField adds an optional field to the form for that category.
   categories: [
     { id: "account", name: "Account & Login", icon: "🔐", description: "Sign-in problems, password resets, account changes." },
-    { id: "billing", name: "Billing & Payments", icon: "💳", description: "Invoices, charges, refunds and payment methods.",
-      extraField: { label: "Invoice or account number", placeholder: "e.g. INV-10423" } },
-    { id: "orders", name: "Orders & Shipping", icon: "📦", description: "Order status, delivery, returns and exchanges.",
-      extraField: { label: "Order number", placeholder: "e.g. 100245" } },
     { id: "technical", name: "Technical Issue", icon: "🛠️", description: "Something isn't working the way it should." },
-    { id: "feedback", name: "Feedback & Ideas", icon: "💡", description: "Suggestions and feature requests." },
-    { id: "other", name: "Something Else", icon: "💬", description: "Anything that doesn't fit the categories above." },
+    { id: "toner", name: "Order Printer Ink/Toner", icon: "🖨️", description: "Request ink or toner cartridges for a printer.",
+      extraField: { label: "Printer model and location", placeholder: "e.g. HP LaserJet M404, front office" } },
+    { id: "password", name: "Password Reset", icon: "🔑", description: "Forgot your password or locked out of an account.",
+      extraField: { label: "Which account or system?", placeholder: "e.g. email, computer login, VPN" } },
+    { id: "laptop", name: "New Laptop Setup", icon: "💻", description: "Set up a laptop for a new or existing team member.",
+      extraField: { label: "Who is it for, and when is it needed?", placeholder: "e.g. Jordan Lee, needed by Nov 3" } },
   ],
 };
